@@ -11,7 +11,7 @@ const mongoose = require('mongoose');
 
 // 🚨🚨🚨 ВАЖНО: ВСТАВЬТЕ СЮДА ВАШУ СТРОКУ ПОДКЛЮЧЕНИЯ ИЗ MONGODB ATLAS 🚨🚨🚨
 // Пример: const dbURI = 'mongodb+srv://chatuser:ВАШ_ПАРОЛЬ@cluster0.abcde.mongodb.net/chat_db';
-const dbURI = 'mongodb+srv://felak:<db_Felak22113d>@chatdb.sf9erka.mongodb.net/?appName=ChatDB'; 
+const dbURI = 'mongodb+srv://felak:Felak22113d@chatdb.sf9erka.mongodb.net/chat_db';
 
 mongoose.connect(dbURI)
   .then(() => console.log('Подключение к MongoDB установлено'))
