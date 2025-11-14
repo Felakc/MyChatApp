@@ -9,7 +9,8 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 const mongoose = require('mongoose'); 
 
-// !!! ВСТАВЬТЕ СТРОКУ ПОДКЛЮЧЕНИЯ ИЗ MONGODB ATLAS С ВАШИМ ПАРОЛЕМ ЗДЕСЬ !!!
+// 🚨🚨🚨 ВАЖНО: ВСТАВЬТЕ СЮДА ВАШУ СТРОКУ ПОДКЛЮЧЕНИЯ ИЗ MONGODB ATLAS 🚨🚨🚨
+// Пример: const dbURI = 'mongodb+srv://chatuser:ВАШ_ПАРОЛЬ@cluster0.abcde.mongodb.net/chat_db';
 const dbURI = 'mongodb+srv://felak:<db_Felak22113d>@chatdb.sf9erka.mongodb.net/?appName=ChatDB'; 
 
 mongoose.connect(dbURI)
@@ -24,6 +25,7 @@ const Message = mongoose.model('Message', new mongoose.Schema({
 
 
 const PORT = process.env.PORT || 3000;
+// Используем Map для хранения связи между именем пользователя и его ID сокета
 const users = new Map();
 
 
@@ -38,6 +40,7 @@ io.on('connection', async (socket) => {
   
   // 1. ОТПРАВКА ИСТОРИИ НОВОМУ ПОЛЬЗОВАТЕЛЮ
   try {
+    // Запрашиваем историю из базы данных
     const history = await Message.find().sort({ timestamp: -1 }).limit(100);
     socket.emit('history', history.reverse()); 
   } catch (err) {
@@ -47,13 +50,17 @@ io.on('connection', async (socket) => {
 
   // 2. СЛУШАЕМ СООБЩЕНИЕ (Общий или Приватный)
   socket.on('chat message', (data) => {
+    // data — это объект: { sender: 'Имя', receiver: 'Имя', msg: 'Сообщение' }
+    
     let fullMessage = `${data.sender}: ${data.msg}`;
     
     if (data.receiver) {
         // ПРИВАТНОЕ СООБЩЕНИЕ
         const receiverSocketId = users.get(data.receiver);
         if (receiverSocketId) {
+            // Отправляем ТОЛЬКО получателю
             io.to(receiverSocketId).emit('chat message', `[ПРИВАТНОЕ ОТ ${data.sender}]: ${data.msg}`);
+            // Отправляем обратно отправителю (подтверждение)
             socket.emit('chat message', `[ПРИВАТНОЕ ДЛЯ ${data.receiver}]: ${data.msg}`);
         } else {
             socket.emit('chat message', `Пользователь ${data.receiver} не в сети.`);
@@ -61,6 +68,7 @@ io.on('connection', async (socket) => {
     } else {
         // ОБЩИЙ ЧАТ
         io.emit('chat message', fullMessage); 
+        // СОХРАНЯЕМ В БД (только общий чат)
         const messageToSave = new Message({ msg: fullMessage });
         messageToSave.save();
     }
@@ -68,6 +76,7 @@ io.on('connection', async (socket) => {
   
   // 3. РЕГИСТРАЦИЯ ИМЕНИ ПОЛЬЗОВАТЕЛЯ
   socket.on('set username', (username) => {
+      // Сохраняем связь имени с ID сокета
       users.set(username, socket.id);
       socket.username = username;
       io.emit('chat message', `[СИСТЕМА]: Пользователь ${username} подключился.`);
@@ -76,6 +85,7 @@ io.on('connection', async (socket) => {
   // 4. ОБРАБОТКА ОТКЛЮЧЕНИЯ
   socket.on('disconnect', () => {
       if (socket.username) {
+          // Удаляем пользователя из Map при отключении
           users.delete(socket.username);
           io.emit('chat message', `[СИСТЕМА]: Пользователь ${socket.username} отключился.`);
       }
