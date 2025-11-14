@@ -8,46 +8,77 @@
     <ul id="messages" style="list-style-type: none; padding: 0;"></ul>
     
     <form id="chat" action="" style="position: fixed; bottom: 0;">
-        <input id="username" autocomplete="off" placeholder="Имя" style="width: 100px;" />
-        <input id="m" autocomplete="off" placeholder="Сообщение..." style="width: 250px;" />
-        <button>Отправить</button>
-    </form>
+    <input id="username" autocomplete="off" placeholder="Ваше Имя" style="width: 100px; padding: 5px;" />
+    <input id="receiver" autocomplete="off" placeholder="Получатель (для ЛС)" style="width: 150px; padding: 5px;" />
+    <input id="m" autocomplete="off" placeholder="Сообщение..." style="width: 200px; padding: 5px;" />
+    <button style="padding: 5px;">Отправить</button>
+</form>
 
-    <script src="/socket.io/socket.io.js"></script> 
-    
-    <script>
-        // 1. Устанавливаем соединение с сервером
-        const socket = io(); 
-        
-        // Получаем ссылки на элементы страницы
-        const form = document.getElementById('chat');
-        const inputMessage = document.getElementById('m');
-        const inputUsername = document.getElementById('username');
-        const messages = document.getElementById('messages');
+   <script src="/socket.io/socket.io.js"></script> 
 
-        // 2. Обработка отправки сообщения
-        form.addEventListener('submit', function(e) {
-            e.preventDefault(); // Запрещаем перезагрузку страницы
-            
-            const username = inputUsername.value.trim() || 'Гость';
-            const message = inputMessage.value.trim();
-            
-            if (message) {
-                const fullMessage = `${username}: ${message}`;
-                // Отправляем на сервер по каналу 'chat message'
-                socket.emit('chat message', fullMessage); 
-                inputMessage.value = ''; // Очищаем поле ввода
-            }
+<script>
+    const socket = io(); 
+
+    const form = document.getElementById('chat');
+    const inputMessage = document.getElementById('m');
+    const inputUsername = document.getElementById('username');
+    const inputReceiver = document.getElementById('receiver'); 
+    const messages = document.getElementById('messages');
+
+    // --- 1. РЕГИСТРАЦИЯ ИМЕНИ ПОЛЬЗОВАТЕЛЯ ---
+    let currentUsername = inputUsername.value.trim() || 'Гость';
+
+    const userNamePrompt = prompt("Введите ваше имя для чата:", "Гость");
+    if (userNamePrompt) {
+        currentUsername = userNamePrompt.trim();
+    }
+
+    socket.emit('set username', currentUsername); // Отправляем имя на сервер
+    inputUsername.value = currentUsername;
+    inputUsername.readOnly = true; 
+
+    // Вспомогательная функция для отображения сообщения
+    function displayMessage(msg) {
+        const item = document.createElement('li');
+        item.textContent = msg;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    // 2. Обработка отправки сообщения (в виде ОБЪЕКТА)
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); 
+
+        const message = inputMessage.value.trim();
+        const receiver = inputReceiver.value.trim(); 
+
+        if (message) {
+            const data = {
+                sender: currentUsername,
+                receiver: receiver || null, // Если пусто, то общий чат
+                msg: message
+            };
+
+            socket.emit('chat message', data); 
+            inputMessage.value = ''; 
+            inputReceiver.value = ''; 
+        }
+    });
+
+    // 3. Обработка получения сообщения (общего или приватного)
+    socket.on('chat message', function(msg) {
+        displayMessage(msg);
+    });
+
+    // 4. Обработка получения ИСТОРИИ сообщений
+    socket.on('history', function(history) {
+        messages.innerHTML = ''; 
+        history.forEach(item => {
+            displayMessage(item.msg);
         });
-
-        // 3. Обработка получения сообщения от сервера
-        socket.on('chat message', function(msg) {
-            const item = document.createElement('li'); // Создаем новый элемент списка
-            item.textContent = msg;
-            messages.appendChild(item); // Добавляем сообщение в чат
-            window.scrollTo(0, document.body.scrollHeight); // Прокрутка вниз
-        });
-    </script>
+        displayMessage('--- История загружена ---');
+    });
+</script>
 
 </body>
 </html>
