@@ -1,13 +1,7 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
+<html lang="ru"> <head>
     <title>Chat App (Secure)</title>
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    
-    <style>
-        /* ... стили ... */
-    <title>Chat App (Secure)</title>
     <style>
         body { margin: 0; padding-bottom: 3rem; font-family: sans-serif; }
         #messages { list-style-type: none; margin: 0; padding: 0; }
@@ -26,20 +20,23 @@
 <body>
     <ul id="messages"></ul>
 
-   <form id="auth-form" action="">
-    <h2>Вход / Регистрация</h2>
-    <input id="auth-username" autocomplete="off" placeholder="Имя пользователя" required />
-    <input id="auth-password" type="password" autocomplete="off" placeholder="Пароль" required />
-    <button id="register-btn" type="button">Регистрация</button>
-    <button id="login-btn" type="submit">Войти</button>
-    <p id="auth-message" style="color: red;"></p>
-</form>
+    <form id="auth-form" action="">
+        <h2>Вход / Регистрация</h2>
+        <input id="auth-username" autocomplete="off" placeholder="Имя пользователя" required />
+        <input id="auth-password" type="password" autocomplete="off" placeholder="Пароль" required />
+        
+        <button id="register-btn" type="button">Регистрация</button>
+        
+        <button id="login-btn" type="submit">Войти</button>
+        
+        <p id="auth-message" style="color: red;"></p>
+    </form>
 
     <form id="chat" action="" class="hidden">
         <input id="username" autocomplete="off" placeholder="Ваше Имя" style="width: 100px;" readonly />
         <input id="receiver" autocomplete="off" placeholder="Получатель (для ЛС)" style="width: 150px;" />
         <input id="m" autocomplete="off" placeholder="Сообщение..." style="flex-grow: 1;" />
-        <button>Отправить</button>
+        <button type="submit">Отправить</button>
     </form>
     
     <script src="/socket.io/socket.io.js"></script> 
@@ -78,7 +75,7 @@
             e.preventDefault();
             const username = authUsernameInput.value.trim();
             const password = authPasswordInput.value;
-            // Проверяем, что нажата именно кнопка "Войти"
+            // Проверяем, чтобы избежать двойного срабатывания при регистрации
             if (e.submitter && e.submitter.id === 'register-btn') return;
             
             if (username && password) {
@@ -100,7 +97,6 @@
             // Успешный вход
             currentUsername = data.username;
             
-            // Скрываем форму входа и показываем чат
             authForm.classList.add('hidden');
             chatForm.classList.remove('hidden');
             inputChatUsername.value = currentUsername;
@@ -108,7 +104,7 @@
             authMessage.textContent = `Добро пожаловать, ${currentUsername}!`;
             authMessage.style.color = 'blue';
 
-            // Отправляем серверу, что мы вошли
+            // Отправляем серверу, что мы вошли, чтобы он добавил нас в онлайн-список и отправил историю
             socket.emit('authenticate', currentUsername);
         });
         
@@ -150,7 +146,6 @@
         socket.on('history', function(history) {
             messages.innerHTML = ''; 
             history.forEach(item => {
-                // В коде index.js мы сохраняли и sender, и msg
                 displayMessage({ sender: item.sender, msg: item.msg });
             });
             displayMessage({ sender: '[СИСТЕМА]', msg: '--- История загружена ---' });
