@@ -19,7 +19,9 @@
   },
   "homepage": "https://github.com/Felakc/MyChatApp#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^7.0.0",
     "mongoose": "^8.19.3",
     "socket.io": "^4.8.1"
